@@ -1,13 +1,13 @@
-function IslandView(fill = "green", doRound = false) {
+function IslandView(fill = "green", radius = 100, doRound = false) {
 	this.el = document.createElementNS("http://www.w3.org/2000/svg", "path")
 	this.el.setAttribute("stroke", "none")
 	this.el.setAttribute("fill", fill)
 
-	function scale(value, radius) {
+	function scale(value) {
 		return value*radius
 	}
 
-	function round(value, radius) {
+	function round(value) {
 		return doRound ? Math.round(value*radius) : value*radius
 	}
 
@@ -21,26 +21,26 @@ function IslandView(fill = "green", doRound = false) {
 		return position[1] < 0 ? Math.acos(-position[0]) : Math.acos(position[0]) + Math.PI
 	}
 
-	function createInnerIslandPathString(island, radius) {
+	function createInnerIslandPathString(island) {
 		const last = island[island.length-1]
-		return `M ${round(last[0],radius)} ${round(last[1],radius)} ` + island.map(
-			position => `L ${round(position[0],radius)} ${round(position[1],radius)}`
+		return `M ${round(last[0])} ${round(last[1])} ` + island.map(
+			position => `L ${round(position[0])} ${round(position[1])}`
 		).join(" ")
 	}
 	
-	function createBorderIslandPathString(island, startPosition, endPosition, nextPosition, radius) {
+	function createBorderIslandPathString(island, startPosition, endPosition, nextPosition) {
 		const endAngle = getAngle(endPosition)
 		const nextAngle = getAngle(nextPosition)
 		let deltaAngle = nextAngle - endAngle
 		if(deltaAngle < 0)
 			deltaAngle += 2*Math.PI
 		const large = Math.PI < deltaAngle ? 1 : 0
-		return island.map(position => `L ${round(position[0],radius)} ${round(position[1],radius)}`).join(" ")  +
-			` L ${scale(endPosition[0],radius)} ${scale(endPosition[1],radius)} ` +
-			`A ${radius} ${radius} 0 ${large} 1 ${scale(nextPosition[0],radius)} ${scale(nextPosition[1],radius)}`
+		return island.map(position => `L ${round(position[0])} ${round(position[1])}`).join(" ")  +
+			` L ${scale(endPosition[0])} ${scale(endPosition[1])} ` +
+			`A ${radius} ${radius} 0 ${large} 1 ${scale(nextPosition[0])} ${scale(nextPosition[1])}`
 	}
 
-	this.draw = function(islands, radius) {
+	this.draw = function(islands) {
 		const innerIslands = []
 		const borderIslands = []
 		const extremes = []
@@ -83,7 +83,7 @@ function IslandView(fill = "green", doRound = false) {
 		}
 		const pathPieces = []
 		for(const island of innerIslands)
-			pathPieces.push(createInnerIslandPathString(island, radius))
+			pathPieces.push(createInnerIslandPathString(island))
 		if(borderIslands.length != 0) {
 			const visited = borderIslands.map(() => false)
 			const next = []
@@ -100,7 +100,7 @@ function IslandView(fill = "green", doRound = false) {
 				let islandIdx = i
 				if(!visited[islandIdx]) {
 					const startPosition = extremes[islandIdx][0]
-					pathPieces.push(`M ${scale(startPosition[0],radius)} ${scale(startPosition[1],radius)}`)
+					pathPieces.push(`M ${scale(startPosition[0])} ${scale(startPosition[1],)}`)
 				}
 				while(!visited[islandIdx]) {
 					visited[islandIdx] = true
