@@ -30,11 +30,15 @@ function init() {
 			{"color": "rgb(110,50,90)", "span": 0.5},
 			{"color": "rgb(160,80,100)", "span": 0.7, "divergence": 0.3}
 		],
-		"atmosphere": {
+		"cloud": {
 			"color": "rgb(200,250,180)",
 			"span": 0.7,
 			"divergence": 0.9,
 			"height": 5
+		},
+		"atmosphere": {
+			"color": "rgb(200,250,180)",
+			"height": 18
 		}
 	}`
 

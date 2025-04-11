@@ -31,16 +31,11 @@ function PlanetView(template = {}) {
 	}
 
 	this.setTemplate = function(template = {}) {
+		const cloud = template.cloud
 		const atmosphere = template.atmosphere
 		const layers = template.layers
-		const radius = 100 - (atmosphere && atmosphere.height ? atmosphere.height : 0)
-
-		const circleEl = document.createElementNS("http://www.w3.org/2000/svg", "circle")
-		circleEl.setAttribute("cx", 0)
-		circleEl.setAttribute("cy", 0)
-		circleEl.setAttribute("r", radius)
-		circleEl.setAttribute("fill", template.color || randomColor())
-		circleEl.setAttribute("stroke", "none")
+		const radius = 100 - (atmosphere && atmosphere.height || 0) - (cloud && cloud.height || 0)
+		console.log("radius", radius)
 
 		const layerInstances = []
 		if(template.layers) {
@@ -51,17 +46,82 @@ function PlanetView(template = {}) {
 			}
 		}
 
-		if(atmosphere) {
-			const prevNoise = layerInstances[layerInstances.length-1][2]
-			layerInstances.push(instantiateLayer(atmosphere, 100))
-		}
+		this.el.innerHTML = `
+<defs>
+<radialGradient id="planet_shaddow_gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(-20 -20) rotate(60) scale(120)">
+<stop stop-color="#0A1627" stop-opacity="0"/>
+<stop offset="0.6" stop-color="#0A1627" stop-opacity="0.1"/>
+<stop offset="1" stop-color="#0A1627" stop-opacity="0.7"/>
+</radialGradient>
+<radialGradient id="cloud_shaddow_gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(-30 -30) rotate(60) scale(130)">
+<stop stop-color="#0A1627" stop-opacity="0"/>
+<stop offset="0.6" stop-color="#0A1627" stop-opacity="0.1"/>
+<stop offset="1" stop-color="#0A1627" stop-opacity="0.7"/>
+</radialGradient>
+<radialGradient id="diffraction_alpha" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(-30 -30) rotate(60) scale(100 160)">
+<stop stop-color="#FF0000"/>
+<stop offset="0.60" stop-color="#FF0000" stop-opacity="0.65"/>
+<stop offset="1" stop-color="#FF0000" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="diffraction_gradient" cx="0" cy="0" r="100" gradientUnits="userSpaceOnUse">
+<stop stop-color="#F6FFCF" stop-opacity="0.2"/>
+<stop offset="0.75" stop-color="#F6FFCF"/>
+<stop offset="0.9" stop-color="#F6FFCF" stop-opacity="0"/>
+</radialGradient>
+</defs>
+		`
 
-		this.el.innerHTML = ""
+		const circleEl = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+		circleEl.setAttribute("cx", 0)
+		circleEl.setAttribute("cy", 0)
+		circleEl.setAttribute("r", radius)
+		circleEl.setAttribute("fill", template.color || randomColor())
+		circleEl.setAttribute("stroke", "none")
 		this.el.appendChild(circleEl)
+
 		for(const [view, contour] of layerInstances) {
 			this.el.appendChild(view.el)
 			view.draw(contour)
 		}
+
+		const cloudMaskEl = document.createElementNS("http://www.w3.org/2000/svg", "mask")
+		cloudMaskEl.setAttribute("id", "cloud_mask")
+		cloudMaskEl.setAttribute("maskUnits", "userSpaceOnUse")
+		cloudMaskEl.setAttribute("x", "-100")
+		cloudMaskEl.setAttribute("y", "-100")
+		cloudMaskEl.setAttribute("width", "200")
+		cloudMaskEl.setAttribute("height", "200")
+		cloudMaskEl.style.maskType = "alpha"
+		this.el.appendChild(cloudMaskEl)
+		if(cloud) {
+			const prevNoise = layerInstances[layerInstances.length-1][2]
+			const cloudRadius = 100 - (atmosphere && atmosphere.height || 0)
+			const cloudLayerInstance = instantiateLayer(cloud, cloudRadius)
+			const [view, contour] = cloudLayerInstance
+			cloudMaskEl.appendChild(view.el)
+			view.draw(contour)
+			layerInstances.push(cloudLayerInstance)
+		}
+
+		const atmosphereEl = document.createElementNS("http://www.w3.org/2000/svg", "g")
+		atmosphereEl.innerHTML = `
+<circle cx="0" cy="0" r="${radius}" fill="url(#planet_shaddow_gradient)"/>
+
+<g mask="url(#cloud_mask)">
+<circle cx="0" cy="0" r="100" fill="${cloud.color || 'white'}"/>
+<circle cx="0" cy="0" r="100" fill="url(#cloud_shaddow_gradient)"/>
+</g>
+
+<mask id="diffraction_mask" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="-100" y="-100" width="200" height="200">
+<circle cx="0" cy="0" r="100" fill="url(#diffraction_alpha)"/>
+</mask>
+
+<g mask="url(#diffraction_mask)">
+<circle cx="0" cy="0" r="100" opacity="0.41" fill="url(#diffraction_gradient)"/>
+</g>
+`
+		this.el.appendChild(atmosphereEl)
+
 
 		this.setRotation = function(rotation = new RotationMatrix(0,0,0)) {
 			for(const [view, contour] of layerInstances) {
