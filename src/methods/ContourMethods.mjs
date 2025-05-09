@@ -1,8 +1,3 @@
-function getNoise(positions, edges) {
-	const noise = positions.map(() => Math.random())
-	return noise
-}
-
 function getIslandCountours(positions, faces, adjacency, noise, treshhold = 0.5) {
 	// if you got to a face, its entrance edge has a high vertex and a low vertex
 	// just go to the other edge which has a low vertex and a high vertex
@@ -47,4 +42,4 @@ function getIslandCountours(positions, faces, adjacency, noise, treshhold = 0.5)
 	return islands
 }
 
-export { getNoise, getIslandCountours }
+export { getIslandCountours }

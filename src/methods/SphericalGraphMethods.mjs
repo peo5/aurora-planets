@@ -25,28 +25,78 @@ function getVertexAdjacency(edges) {
 	return adjacency
 }
 
-function subdivide(positions, faces, adjacency) {
-	const subPositionsIdx = faces.map(() => new Array(3))
-	const newFaces = new Array(4*faces.length)
-	const newAdjacency = new Array(4*faces.length)
+function getMidOctave(a, b) {
+	const midOctave = a.map((coordinateA,i) => {
+		const coordinateB = b[i]
+		const midCoordinate = []
+		let posA = 0
+		let posB = 0
+		while(posA < coordinateA.length && posB < coordinateB.length) {
+			const [idxA, factorA] = coordinateA[posA]
+			const [idxB, factorB] = coordinateB[posB]
+			if(idxA == idxB) {
+				midCoordinate.push([idxA, (factorA+factorB)/2])
+				++posA
+				++posB
+			}
+			else if(idxA < idxB) {
+				midCoordinate.push([idxA, 0])
+				++posA
+			}
+			else {
+				midCoordinate.push([idxB, 0])
+				++posB
+			}
+		}
+		while(posA < coordinateA.length) {
+			const [idxA, factorA] = coordinateA[posA]
+			midCoordinate.push([idxA, 0])
+			++posA
+		}
+		while(posB < coordinateB.length) {
+			const [idxB, factorB] = coordinateB[posB]
+			midCoordinate.push([idxB, 0])
+			++posB
+		}
+		return midCoordinate
+	})
+	return midOctave
+}
+
+function getMidPositionNorm(a, b) {
+	return a.sum(b.sub(a).scale(1/2)).normalize()
+}
+
+function subdivide(positions, faces, adjacency, octaves, octaveLengths) {
+	const midPositionsIdx = faces.map(() => Array(3))
+	const newFaces = Array(4*faces.length)
+	const newAdjacency = Array(4*faces.length)
+	const newOctaves = octaves.map(
+		(coordinate, i) => coordinate.map(
+			components => components.map(
+				([j,factor]) => [j,factor*2+1]
+			)
+		).concat([[[i,1]]])
+	)
+	octaveLengths.push(octaves.length)
 	for(let a = 0; a < faces.length; ++a) {
-		// create sub positions
+		// create mid positions and mid octaves
 		for(let i = 0; i < 3; ++i) {
 			const [b,j] = adjacency[a][i]
-			subPositionsIdx[a][i] = subPositionsIdx[b][j]
-			if(subPositionsIdx[a][i] == undefined) {
-				const posU = positions[faces[a][i]]
-				const posV = positions[faces[a][(i+1)%3]]
-				subPositionsIdx[a][i] = positions.length
-				positions.push(posU.sum(posV.sub(posU).scale(1/2)).normalize())
+			midPositionsIdx[a][i] = midPositionsIdx[b][j]
+			if(midPositionsIdx[a][i] == undefined) {
+				const idxU = faces[a][i]
+				const idxV = faces[a][(i+1)%3]
+				midPositionsIdx[a][i] = positions.length
+				positions.push(getMidPositionNorm(positions[idxU],positions[idxV]))
+				newOctaves.push(getMidOctave(newOctaves[idxU],newOctaves[idxV]))
 			}
 		}
 		// create new faces
 		for(let j = 0; j < 3; ++j)
-			newFaces[4*a+j] = [faces[a][j],subPositionsIdx[a][j],subPositionsIdx[a][(j+2)%3]]
-		newFaces[4*a+3] = [subPositionsIdx[a][0],subPositionsIdx[a][1],subPositionsIdx[a][2]]
-		// create new adjacency TODO: correct adjacency chirality
-		/*
+			newFaces[4*a+j] = [faces[a][j],midPositionsIdx[a][j],midPositionsIdx[a][(j+2)%3]]
+		newFaces[4*a+3] = [midPositionsIdx[a][2],midPositionsIdx[a][0],midPositionsIdx[a][1]]
+		// create new adjacency
 		for(let j = 0; j < 3; ++j) {
 			newAdjacency[4*a+j] = [
 				[4*adjacency[a][j][0] + (adjacency[a][j][1] + 1)%3, 2],
@@ -55,13 +105,12 @@ function subdivide(positions, faces, adjacency) {
 			]
 		}
 		newAdjacency[4*a+3] = [[4*a+0,1],[4*a+1,1],[4*a+2,1]]
-		*/
 	}
-	return [positions, newFaces, getFaceAdjacency(newFaces)]
+	return [positions, newFaces, newAdjacency, newOctaves, octaveLengths]
 }
 
-function powerSubdivide(positions, faces, adjacency, power) {
-	let state = [positions, faces, adjacency]
+function powerSubdivide(positions, faces, adjacency, octaves, octaveLengths, power) {
+	let state = [positions, faces, adjacency, octaves, octaveLengths]
 	for(let i = 0; i < power; ++i)
 		state = subdivide(...state)
 	return state
@@ -88,7 +137,9 @@ function createTetrahedralSphere(power) {
 		[[3,2],[0,1],[1,0]],
 		[[1,2],[0,2],[2,0]],
 	]
-	return powerSubdivide(positions, faces, adjacency, power)
+	const octaves = [[],[],[],[]]
+	const octaveLengths = []
+	return powerSubdivide(positions, faces, adjacency, octaves, octaveLengths, power)
 }
 
 function createIcosahedralSphere(power) {
@@ -123,7 +174,9 @@ function createIcosahedralSphere(power) {
 		[[11,2],[17,0],[13,0]], [[12,2],[18,0],[14,0]], [[13,2],[19,0],[10,0]], [[10,1],[5,1],[6,2]],
 		[[11,1],[6,1],[7,2]], [[12,1],[7,1],[8,2]], [[13,1],[8,1],[9,2]], [[14,1],[9,1],[5,2]],
 	]
-	return powerSubdivide(positions, faces, adjacency, power)
+	const octaves = [[],[],[],[],[],[],[],[],[],[],[],[]]
+	const octaveLengths = []
+	return powerSubdivide(positions, faces, adjacency, octaves, octaveLengths, power)
 }
 
 function getEdges(faces, adjacency) {
@@ -138,6 +191,6 @@ function getEdges(faces, adjacency) {
 		faceProcessed[a] = true
 	}
 	return edges
-} 
+}
 
 export { createTetrahedralSphere, createIcosahedralSphere, getEdges }

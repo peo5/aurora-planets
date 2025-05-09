@@ -1,4 +1,4 @@
-function IslandView(fill = "green", radius = 100, doRound = false) {
+function IslandView(contour, fill = "green", radius = 100, doRound = false) {
 	this.el = document.createElementNS("http://www.w3.org/2000/svg", "path")
 	this.el.setAttribute("stroke", "none")
 	this.el.setAttribute("fill", fill)
@@ -40,7 +40,10 @@ function IslandView(fill = "green", radius = 100, doRound = false) {
 			`A ${radius} ${radius} 0 ${large} 1 ${scale(nextPosition[0])} ${scale(nextPosition[1])}`
 	}
 
-	this.draw = function(islands) {
+	this.draw = function(rotation) {
+		const islands = rotation
+			? contour.map(island => island.map(position => rotation.multiply(position)))
+			: contour
 		const innerIslands = []
 		const borderIslands = []
 		const extremes = []

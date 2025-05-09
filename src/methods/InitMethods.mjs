@@ -2,7 +2,7 @@ import { RotationMatrix } from "methods/LinearMethods.mjs"
 
 import AnimatorService from "services/AnimatorService.mjs"
 import PlanetView from "views/PlanetView.mjs"
-import SettingsView from "views/SettingsView.mjs"
+import TemplateView from "views/TemplateView.mjs"
 
 function init() {
 	const nestEl = document.createElement("div")
@@ -24,16 +24,45 @@ function init() {
 	planetNestEl.style.padding = "0 28px"
 	nestEl.appendChild(planetNestEl)
 
-	const planetJSON = `{
+	const planetTemplateJSON = `{
+		"seed": "mac0300",
+		"resolution": 3,
 		"color": "rgb(80,120,180)",
+		"noises": {
+			"a": {
+				"seed-suffix": "noise A",
+				"octave-strengths": [2,7,1]
+			},
+			"b": {
+				"octave-strengths": [1,3,8]
+			},
+			"clouds": {
+				"octave-strengths": [0,3,10]
+			}
+		},
 		"layers": [
-			{"color": "rgb(110,50,90)", "span": 0.5},
-			{"color": "rgb(160,80,100)", "span": 0.7, "divergence": 0.3}
+			{
+				"noise-strengths": {
+					"a": 1
+				},
+				"span": 0.3,
+				"color": "rgb(110,50,90)"
+			},
+			{
+				"noise-strengths": {
+					"a": 1,
+					"b": 4
+				},
+				"span": 0.2,
+				"color": "rgb(160,80,100)"
+			}
 		],
-		"cloud": {
+		"clouds": {
+			"noise-strengths": {
+				"clouds": 1
+			},
+			"span": 0.1,
 			"color": "rgb(200,250,180)",
-			"span": 0.7,
-			"divergence": 0.9,
 			"height": 5
 		},
 		"atmosphere": {
@@ -41,16 +70,15 @@ function init() {
 			"height": 18
 		}
 	}`
-
-	const planetSettings = JSON.parse(planetJSON)
-	const planet = new PlanetView(planetSettings)
+	const planetTemplate = JSON.parse(planetTemplateJSON)
+	const planet = new PlanetView(planetTemplate)
 	planet.el.style.width = "100%"
 	planetNestEl.appendChild(planet.el)
 
-	const settingsView = new SettingsView(planetSettings, settings => {
-		planet.setTemplate(settings)
+	const templateView = new TemplateView(planetTemplate, template => {
+		planet.setTemplate(template)
 	})
-	nestEl.appendChild(settingsView.el)
+	nestEl.appendChild(templateView.el)
 
 	let angle = 0
 	const animator = new AnimatorService(deltaTime => {
