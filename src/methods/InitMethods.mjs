@@ -31,19 +31,34 @@ function init() {
 		"noises": {
 			"a": {
 				"seed-suffix": "noise A",
-				"octave-strengths": [2,7,1]
+				"octave-strengths": [
+					2,
+					7,
+					1
+				]
 			},
 			"b": {
-				"octave-strengths": [1,3,8]
+				"octave-strengths": [
+					1,
+					3,
+					8
+				],
+				"seed-suffix": "b"
 			},
 			"clouds": {
-				"octave-strengths": [0,3,10]
+				"octave-strengths": [
+					2,
+					1,
+					5
+				],
+				"seed-suffix": "clouds"
 			}
 		},
 		"layers": [
 			{
 				"noise-strengths": {
-					"a": 1
+					"a": 2,
+					"b": 1
 				},
 				"span": 0.3,
 				"color": "rgb(110,50,90)"
@@ -51,9 +66,9 @@ function init() {
 			{
 				"noise-strengths": {
 					"a": 1,
-					"b": 4
+					"b": 2
 				},
-				"span": 0.2,
+				"span": 0.1,
 				"color": "rgb(160,80,100)"
 			}
 		],
@@ -61,7 +76,7 @@ function init() {
 			"noise-strengths": {
 				"clouds": 1
 			},
-			"span": 0.1,
+			"span": 0.01,
 			"color": "rgb(200,250,180)",
 			"height": 5
 		},

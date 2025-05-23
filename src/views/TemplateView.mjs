@@ -1,10 +1,11 @@
 function TemplateView(template, callback) {
 	this.el = document.createElement("div")
 	this.el.style.boxSizing = "border-box"
-	this.el.style.minWidth = "200px"
-	this.el.style.maxWidth = "300px"
-	this.el.style.height = "fit-content"
-	this.el.style.flexGrow = "0.1"
+	this.el.style.display = "flex"
+	this.el.style.flexDirection = "column"
+	this.el.style.width = "fit-content"
+	this.el.style.maxWidth = "60vw"
+	this.el.style.flexGrow = "0.5"
 	this.el.style.background = "#fff2"
 	this.el.style.color = "#fff"
 	this.el.style.padding = "8px"
@@ -15,8 +16,13 @@ function TemplateView(template, callback) {
 	titleEl.style.fontSize = "1.5em"
 	titleEl.style.fontWeight = "700"
 	titleEl.style.fontFamily = "sans"
-	titleEl.style.margin = "18px 8px"
+	titleEl.style.margin = "1em 0.5em"
 	this.el.appendChild(titleEl)
+
+	const jsonNestEl = document.createElement("div")
+	jsonNestEl.style.overflowY = "scroll"
+	jsonNestEl.style.width = "100%"
+	this.el.appendChild(jsonNestEl)
 
 	const jsonEl = document.createElement("pre")
 	jsonEl.innerText = JSON.stringify(template, undefined, 2)
@@ -24,7 +30,8 @@ function TemplateView(template, callback) {
 	jsonEl.style.fontSize = "1.2em"
 	jsonEl.style.whiteSpace = "pre-wrap"
 	jsonEl.style.padding = "8px"
-	this.el.appendChild(jsonEl)
+	jsonEl.style.margin = "none"
+	jsonNestEl.appendChild(jsonEl)
 
 	const errorEl = document.createElement("span")
 	errorEl.style.display = "none"
@@ -42,6 +49,7 @@ function TemplateView(template, callback) {
 	applyButton.style.background = "#bbf5"
 	applyButton.style.border = "none"
 	applyButton.style.borderRadius = "28px"
+	applyButton.style.marginTop = "1em"
 	this.el.appendChild(applyButton)
 
 	this.handleApply = function() {
