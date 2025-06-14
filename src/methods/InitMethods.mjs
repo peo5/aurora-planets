@@ -60,7 +60,7 @@ function init() {
 					"a": 2,
 					"b": 1
 				},
-				"span": 0.3,
+				"span": 0.5,
 				"color": "rgb(110,50,90)"
 			},
 			{

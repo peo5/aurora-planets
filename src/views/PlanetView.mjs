@@ -109,11 +109,28 @@ function instantiateLayer(
 	[positions, faces, adjacency],
 ) {
 	const divergence = layer.divergence
-	const span = layer.span
+	const span = 1-layer.span
 	const color = layer.color
 	const noise = blendNoises(noises, layer["noise-strengths"])
-	const contour = getIslandCountours(positions, faces, adjacency, noise, 1-span)
-	return new IslandView(contour, color, radius)
+	const contour = getIslandCountours(positions, faces, adjacency, noise, span)
+	return new IslandView(contour, color, radius, false, noise, span)
+}
+
+function getBorderVertexBrute(positions, faces, adjacency, rotation) {
+	const rpos = rotation ? positions.map(position => rotation.multiply(position)) : positions
+	for(let i = 0; i < faces.length; ++i) {
+		for(let j = 0; j < 3; ++j) {
+			const vertices = []
+			vertices[0] = faces[i][j]
+			vertices[1] = faces[adjacency[i][j][0]][(adjacency[i][j][1]+2)%3]
+			vertices[2] = faces[i][(j+1)%3]
+			vertices[3] = faces[i][(j+2)%3]
+			const norms = vertices.map(k => Math.hypot(rpos[k][0], rpos[k][1]))
+			if(Math.max(norms[1],norms[3]) < Math.min(norms[0],norms[2]))
+				return vertices[0];
+		}
+	}
+	return 0
 }
 
 function PlanetView(template = {}) {
@@ -134,6 +151,7 @@ function PlanetView(template = {}) {
 
 		setSeed(template.seed)
 
+		// generate noises from octaves
 		const noises = {}
 		for(const noiseKey in template.noises) {
 			const noiseTemplate = template.noises[noiseKey]
@@ -145,6 +163,7 @@ function PlanetView(template = {}) {
 			)
 		}
 
+		// generate layer instances
 		const layerInstances = []
 		if(template.layers) {
 			for(const layer of layers) {
@@ -152,6 +171,7 @@ function PlanetView(template = {}) {
 			}
 		}
 
+		// create planet components
 		this.el.innerHTML = ""
 
 		const defsEl = document.createElementNS("http://www.w3.org/2000/svg", "defs")
@@ -265,8 +285,9 @@ function PlanetView(template = {}) {
 		this.el.appendChild(overlayEl)
 
 		this.setRotation = function(rotation) {
+			const borderVertex = getBorderVertexBrute(positions, faces, adjacency, rotation)
 			for(const layerInstance of layerInstances) {
-				layerInstance.draw(rotation)
+				layerInstance.draw(rotation, borderVertex)
 			}
 		}
 	}
