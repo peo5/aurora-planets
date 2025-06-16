@@ -1,6 +1,6 @@
 function IslandView(contour, fill = "green", radius = 100, doRound = false, noise, treshhold) {
 	this.el = document.createElementNS("http://www.w3.org/2000/svg", "path")
-	this.el.setAttribute("stroke", "red")
+	this.el.setAttribute("stroke", "none")
 	this.el.setAttribute("fill", fill)
 	const sradius = scale(1)
 

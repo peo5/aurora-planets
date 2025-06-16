@@ -24,24 +24,26 @@ function init() {
 	planetNestEl.style.padding = "0 28px"
 	nestEl.appendChild(planetNestEl)
 
-	const planetTemplateJSON = `{
+	const planetTemplate = {
 		"seed": "mac0300",
-		"resolution": 3,
+		"resolution": 4,
 		"color": "rgb(80,120,180)",
 		"noises": {
 			"a": {
 				"seed-suffix": "noise A",
 				"octave-strengths": [
 					2,
-					7,
-					1
+					8,
+					2,
+					8
 				]
 			},
 			"b": {
 				"octave-strengths": [
 					1,
-					3,
-					8
+					8,
+					2,
+					4
 				],
 				"seed-suffix": "b"
 			},
@@ -49,7 +51,8 @@ function init() {
 				"octave-strengths": [
 					2,
 					1,
-					5
+					4,
+					4
 				],
 				"seed-suffix": "clouds"
 			}
@@ -60,7 +63,7 @@ function init() {
 					"a": 2,
 					"b": 1
 				},
-				"span": 0.5,
+				"span": 0.35,
 				"color": "rgb(110,50,90)"
 			},
 			{
@@ -68,7 +71,7 @@ function init() {
 					"a": 1,
 					"b": 2
 				},
-				"span": 0.1,
+				"span": 0.25,
 				"color": "rgb(160,80,100)"
 			}
 		],
@@ -76,7 +79,7 @@ function init() {
 			"noise-strengths": {
 				"clouds": 1
 			},
-			"span": 0.01,
+			"span": 0.1,
 			"color": "rgb(200,250,180)",
 			"height": 5
 		},
@@ -84,13 +87,21 @@ function init() {
 			"color": "rgb(200,250,180)",
 			"height": 18
 		}
-	}`
-	const planetTemplate = JSON.parse(planetTemplateJSON)
+	}
 	const planet = new PlanetView(planetTemplate)
 	planet.el.style.width = "100%"
 	planetNestEl.appendChild(planet.el)
 
-	const templateView = new TemplateView(planetTemplate, template => {
+	const collectionTemplate = [
+		"mac0300",
+		{
+			"name": "mac0327",
+			"seed": "coxa"
+		},
+		"mac0325"
+	]
+
+	const templateView = new TemplateView(planetTemplate, collectionTemplate, template => {
 		planet.setTemplate(template)
 	})
 	nestEl.appendChild(templateView.el)
@@ -101,7 +112,7 @@ function init() {
 		planet.setRotation(rotation)
 		angle += 0.07*Math.PI*deltaTime
 	})
-	animator.play() 
+	// animator.play()
 }
 
 export { init }

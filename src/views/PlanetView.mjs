@@ -113,7 +113,7 @@ function instantiateLayer(
 	const color = layer.color
 	const noise = blendNoises(noises, layer["noise-strengths"])
 	const contour = getIslandCountours(positions, faces, adjacency, noise, span)
-	return new IslandView(contour, color, radius, false, noise, span)
+	return new IslandView(contour, color, radius, true, noise, span)
 }
 
 function getBorderVertexBrute(positions, faces, adjacency, rotation) {
@@ -136,7 +136,7 @@ function getBorderVertexBrute(positions, faces, adjacency, rotation) {
 function PlanetView(template = {}) {
 	this.el = document.createElementNS("http://www.w3.org/2000/svg", "svg")
 	this.el.setAttribute("viewBox", "-100 -100 200 200")
-	this.el.setAttribute("preserveAspectRatio", "")
+	this.el.setAttribute("xmlns", "http://www.w3.org/2000/svg")
 
 	this.setTemplate = function(template = {}) {
 		const clouds = template.clouds
@@ -177,7 +177,7 @@ function PlanetView(template = {}) {
 		const defsEl = document.createElementNS("http://www.w3.org/2000/svg", "defs")
 		defsEl.innerHTML = `
 			<radialGradient
-				id="planet_shaddow_gradient"
+				id="planet_shadow_gradient"
 				cx="0" cy="0" r="1"
 				gradientUnits="userSpaceOnUse"
 				gradientTransform="translate(-20 -20) rotate(60) scale(120)"
@@ -187,7 +187,7 @@ function PlanetView(template = {}) {
 				<stop offset="1" stop-color="#0A1627" stop-opacity="0.7"/>
 			</radialGradient>
 			<radialGradient
-				id="clouds_shaddow_gradient"
+				id="clouds_shadow_gradient"
 				cx="0" cy="0" r="1"
 				gradientUnits="userSpaceOnUse"
 				gradientTransform="translate(-30 -30) rotate(60) scale(130)"
@@ -228,7 +228,6 @@ function PlanetView(template = {}) {
 
 		for(const layerInstance of layerInstances) {
 			this.el.appendChild(layerInstance.el)
-			layerInstance.draw()
 		}
 
 		if(clouds) {
@@ -248,14 +247,18 @@ function PlanetView(template = {}) {
 			layerInstances.push(cloudsLayerInstance)
 		}
 
+		for(const layerInstance of layerInstances) {
+			layerInstance.draw()
+		}
+
 		const overlayEl = document.createElementNS("http://www.w3.org/2000/svg", "g")
 		overlayEl.innerHTML = `
-			<circle cx="0" cy="0" r="${innerRadius}" fill="url(#planet_shaddow_gradient)"/>
+			<circle cx="0" cy="0" r="${innerRadius}" fill="url(#planet_shadow_gradient)"/>
 
 			${clouds ? `
 				<g mask="url(#clouds_mask)">
 					<circle cx="0" cy="0" r="100" fill="${clouds.color}"/>
-					<circle cx="0" cy="0" r="100" fill="url(#clouds_shaddow_gradient)"/>
+					<circle cx="0" cy="0" r="100" fill="url(#clouds_shadow_gradient)"/>
 				</g>
 				`
 				: ''
