@@ -25,6 +25,8 @@ function fixLayer(layers, key, noises) {
 		layer.span = 0.5
 	if(typeof(layer.color) != "string")
 		layer.color = "#555"
+	if(typeof(layer["class"]) != "string")
+		layer["class"] = `layer-${key}`
 }
 
 function fixNoise(noises, key, resolution) {
@@ -62,6 +64,8 @@ function fixTemplate(template) {
 		template.resolution = 2
 	if(typeof(template.color) != "string")
 		template.color = "#777"
+	if(typeof(template["class"]) != "string")
+		template["class"] = "base-layer"
 	if(typeof(template["light-angle"]) != "number")
 		template["light-angle"] = 220
 	if(typeof(template.noises) != "object")
@@ -119,13 +123,14 @@ function instantiateLayer(
 	radius,
 	noises,
 	[positions, faces, adjacency],
+	className,
 ) {
 	const divergence = layer.divergence
 	const span = 1-layer.span
 	const color = layer.color
 	const noise = blendNoises(noises, layer["noise-strengths"])
 	const contour = getIslandCountours(positions, faces, adjacency, noise, span)
-	return new IslandView(contour, color, radius, true, noise, span)
+	return new IslandView(contour, color, radius, true, noise, span, className)
 }
 
 function getBorderVertexBrute(positions, faces, adjacency, rotation) {
@@ -193,9 +198,9 @@ function getShadowOverlay(radius, opacity) {
 />`
 }
 
-function getCloudsOverlay(color) {
+function getCloudsOverlay(color, className = "clouds-layer") {
 	return `<g mask="url(#clouds_mask)">
-	<circle cx="0" cy="0" r="100.5" fill="${color}"/>
+	<circle class="${className}" cx="0" cy="0" r="100.5" fill="${color}"/>
 	<circle cx="0" cy="0" r="100.5" fill="url(#clouds_shadow_gradient)"/>
 </g>`
 }
@@ -254,7 +259,10 @@ function PlanetView(template = {}) {
 		const layerInstances = []
 		if(template.layers) {
 			for(const layer of layers) {
-				layerInstances.push(instantiateLayer(layer, innerRadius, noises, graph))
+				const className = layer["class"]
+				layerInstances.push(
+					instantiateLayer(layer, innerRadius, noises, graph, className)
+				)
 			}
 		}
 
@@ -292,6 +300,9 @@ function PlanetView(template = {}) {
 		circleEl.setAttribute("r", innerRadius)
 		circleEl.setAttribute("fill", template.color)
 		circleEl.setAttribute("stroke", "none")
+		if(template["class"]) {
+			circleEl.classList.add(template["class"])
+		}
 		this.el.appendChild(circleEl)
 
 		// append layers
@@ -312,7 +323,7 @@ function PlanetView(template = {}) {
 			this.el.appendChild(cloudsMaskEl)
 
 			const cloudsRadius = (100+clouds.height)/fullRadius*100
-			const cloudsLayerInstance = instantiateLayer(clouds, cloudsRadius, noises, graph)
+			const cloudsLayerInstance = instantiateLayer(clouds, cloudsRadius, noises, graph, "")
 			cloudsMaskEl.appendChild(cloudsLayerInstance.el)
 			layerInstances.push(cloudsLayerInstance)
 		}
@@ -328,7 +339,7 @@ function PlanetView(template = {}) {
 		if(shadow)
 			overlays.push(getShadowOverlay(innerRadius+0.5,shadow.opacity))
 		if(clouds)
-			overlays.push(getCloudsOverlay(clouds.color))
+			overlays.push(getCloudsOverlay(clouds.color, clouds["class"]))
 		if(atmosphere)
 			overlays.push(getAtmosphereOverlay(atmosphere.opacity))
 		overlaysEl.innerHTML = overlays.join("\n")

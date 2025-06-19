@@ -28,6 +28,7 @@ function init() {
 		seed: "mac0300",
 		resolution: 4,
 		color: "rgb(80,120,180)",
+		"class": "base-layer",
 		"light-angle": "220",
 		noises: {
 			a: {
@@ -66,6 +67,7 @@ function init() {
 				},
 				span: 0.35,
 				color: "rgb(110,50,90)",
+				"class": "land-layer-1",
 			},
 			{
 				"noise-strengths": {
@@ -74,6 +76,7 @@ function init() {
 				},
 				span: 0.25,
 				color: "rgb(160,80,100)",
+				"class": "land-layer-2",
 			}
 		],
 		clouds: {
@@ -83,6 +86,7 @@ function init() {
 			span: 0.1,
 			color: "rgb(200,250,180)",
 			height: 5,
+			"class": "clouds-layer",
 		},
 		atmosphere: {
 			color: "rgb(200,250,180)",
