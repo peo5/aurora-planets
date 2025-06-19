@@ -62,6 +62,8 @@ function fixTemplate(template) {
 		template.resolution = 2
 	if(typeof(template.color) != "string")
 		template.color = "#777"
+	if(typeof(template["light-angle"]) != "number")
+		template["light-angle"] = 220
 	if(typeof(template.noises) != "object")
 		template.noises = Object.create(null)
 	if(typeof(template.layers) != "object")
@@ -81,9 +83,19 @@ function fixTemplate(template) {
 		if(typeof(template.atmosphere) != "object")
 			template.atmosphere = {}
 		if(typeof(template.atmosphere.color) != "string")
-			template.atmosphere.color = "#555"
+			template.atmosphere.color = "#EEE"
+		if(typeof(template.atmosphere.opacity) != "number")
+			template.atmosphere.opacity = 0.5
 		if(typeof(template.atmosphere.height) != "number")
 			template.atmosphere.height = 5
+	}
+	if(template.shadow != undefined) {
+		if(typeof(template.shadow) != "object")
+			template.atmosphere = {}
+		if(typeof(template.shadow.color) != "string")
+			template.atmosphere.color = "#111"
+		if(typeof(template.shadow.opacity) != "number")
+			template.atmosphere.opacity = 1
 	}
 	console.log("fixed template", JSON.stringify(template, undefined, 2))
 }
@@ -133,6 +145,79 @@ function getBorderVertexBrute(positions, faces, adjacency, rotation) {
 	return 0
 }
 
+function getShadowGradient(id, color, radius, rotation, offset = 1/3) {
+	const translation = radius*offset
+	const scale = radius*(1+offset)
+	return `<radialGradient
+	id="${id}"
+	cx="0" cy="0" r="1"
+	gradientUnits="userSpaceOnUse"
+	gradientTransform="rotate(${rotation}) translate(${translation} 0) scale(${scale})"
+>
+	<stop stop-color="${color}" stop-opacity="0"/>
+	<stop offset="0.6" stop-color="${color}" stop-opacity="0.1"/>
+	<stop offset="1" stop-color="${color}" stop-opacity="1"/>
+</radialGradient>`
+}
+
+function getAtmosphereAlphaGradient(rotation) {
+	return `<radialGradient
+	id="scattering_alpha"
+	cx="0" cy="0" r="1"
+	gradientUnits="userSpaceOnUse"
+	gradientTransform="rotate(${rotation}) translate(53 0) scale(100 160)"
+>
+	<stop/>
+	<stop offset="0.60" stop-opacity="0.65"/>
+	<stop offset="1" stop-opacity="0"/>
+</radialGradient>`
+}
+
+function getAtmosphereGradient(color, innerRadius) {
+	return `<radialGradient
+	id="scattering_gradient"
+	cx="0" cy="0" r="100"
+	gradientUnits="userSpaceOnUse"
+>
+	<stop stop-color="${color}" stop-opacity="0.2"/>
+	<stop offset="${innerRadius/100}" stop-color="${color}"/>
+	<stop offset="1" stop-color="${color}" stop-opacity="0"/>
+</radialGradient>`
+}
+
+function getShadowOverlay(radius, opacity) {
+	return `<circle
+	cx="0" cy="0" r="${radius}"
+	opacity="${opacity}"
+	fill="url(#planet_shadow_gradient)"
+/>`
+}
+
+function getCloudsOverlay(color) {
+	return `<g mask="url(#clouds_mask)">
+	<circle cx="0" cy="0" r="100.5" fill="${color}"/>
+	<circle cx="0" cy="0" r="100.5" fill="url(#clouds_shadow_gradient)"/>
+</g>`
+}
+
+function getAtmosphereOverlay(opacity) {
+	return ` <mask
+	id="scattering_mask"
+	style="mask-type:alpha"
+	maskUnits="userSpaceOnUse"
+	x="-100" y="-100" width="200" height="200"
+>
+	<circle cx="0" cy="0" r="100" fill="url(#scattering_alpha)"/>
+</mask>
+<g mask="url(#scattering_mask)">
+	<circle
+		cx="0" cy="0" r="100"
+		opacity="${opacity}"
+		fill="url(#scattering_gradient)"
+	/>
+</g>`
+}
+
 function PlanetView(template = {}) {
 	this.el = document.createElementNS("http://www.w3.org/2000/svg", "svg")
 	this.el.setAttribute("viewBox", "-100 -100 200 200")
@@ -142,6 +227,8 @@ function PlanetView(template = {}) {
 		const clouds = template.clouds
 		const atmosphere = template.atmosphere
 		const layers = template.layers
+		const lightAngle = template["light-angle"]
+		const shadow = template.shadow
 		const fullRadius = 100 + Math.max(atmosphere ? atmosphere.height : 0, clouds ? clouds.height : 0)
 		const innerRadius = 100/fullRadius*100
 		console.log("radi:", fullRadius, innerRadius)
@@ -174,50 +261,31 @@ function PlanetView(template = {}) {
 		// create planet components
 		this.el.innerHTML = ""
 
+		// create SVG definitions
 		const defsEl = document.createElementNS("http://www.w3.org/2000/svg", "defs")
-		defsEl.innerHTML = `
-			<radialGradient
-				id="planet_shadow_gradient"
-				cx="0" cy="0" r="1"
-				gradientUnits="userSpaceOnUse"
-				gradientTransform="translate(-20 -20) rotate(60) scale(120)"
-			>
-				<stop stop-color="#0A1627" stop-opacity="0"/>
-				<stop offset="0.6" stop-color="#0A1627" stop-opacity="0.1"/>
-				<stop offset="1" stop-color="#0A1627" stop-opacity="0.7"/>
-			</radialGradient>
-			<radialGradient
-				id="clouds_shadow_gradient"
-				cx="0" cy="0" r="1"
-				gradientUnits="userSpaceOnUse"
-				gradientTransform="translate(-30 -30) rotate(60) scale(130)"
-			>
-				<stop stop-color="#0A1627" stop-opacity="0"/>
-				<stop offset="0.6" stop-color="#0A1627" stop-opacity="0.1"/>
-				<stop offset="1" stop-color="#0A1627" stop-opacity="0.7"/>
-			</radialGradient>
-			<radialGradient
-				id="diffraction_alpha"
-				cx="0" cy="0" r="1"
-				gradientUnits="userSpaceOnUse"
-				gradientTransform="translate(-30 -30) rotate(60) scale(100 160)"
-			>
-				<stop stop-color="#FF0000"/>
-				<stop offset="0.60" stop-color="#FF0000" stop-opacity="0.65"/>
-				<stop offset="1" stop-color="#FF0000" stop-opacity="0"/>
-			</radialGradient>
-			<radialGradient
-				id="diffraction_gradient"
-				cx="0" cy="0" r="100"
-				gradientUnits="userSpaceOnUse"
-			>
-				<stop stop-color="#F6FFCF" stop-opacity="0.2"/>
-				<stop offset="0.75" stop-color="#F6FFCF"/>
-				<stop offset="0.9" stop-color="#F6FFCF" stop-opacity="0"/>
-			</radialGradient>
-		`
+		const defs = []
+		if(shadow) {
+			defs.push(getShadowGradient(
+				"planet_shadow_gradient",
+				shadow.color,
+				innerRadius,lightAngle
+			))
+			if(clouds) {
+				defs.push(getShadowGradient(
+					"clouds_shadow_gradient",
+					shadow.color,
+					(100+clouds.height)/fullRadius*100,lightAngle
+				))
+			}
+		}
+		if(atmosphere) {
+			defs.push(getAtmosphereAlphaGradient(lightAngle))
+			defs.push(getAtmosphereGradient(atmosphere.color, innerRadius))
+		}
+		defsEl.innerHTML = defs.join("\n")
 		this.el.appendChild(defsEl)
 
+		// create base circle
 		const circleEl = document.createElementNS("http://www.w3.org/2000/svg", "circle")
 		circleEl.setAttribute("cx", 0)
 		circleEl.setAttribute("cy", 0)
@@ -226,10 +294,12 @@ function PlanetView(template = {}) {
 		circleEl.setAttribute("stroke", "none")
 		this.el.appendChild(circleEl)
 
+		// append layers
 		for(const layerInstance of layerInstances) {
 			this.el.appendChild(layerInstance.el)
 		}
 
+		// create cloud mask and layer
 		if(clouds) {
 			const cloudsMaskEl = document.createElementNS("http://www.w3.org/2000/svg", "mask")
 			cloudsMaskEl.setAttribute("id", "clouds_mask")
@@ -247,45 +317,22 @@ function PlanetView(template = {}) {
 			layerInstances.push(cloudsLayerInstance)
 		}
 
+		// draw layers (including cloud layer)
 		for(const layerInstance of layerInstances) {
 			layerInstance.draw()
 		}
 
-		const overlayEl = document.createElementNS("http://www.w3.org/2000/svg", "g")
-		overlayEl.innerHTML = `
-			<circle cx="0" cy="0" r="${innerRadius}" fill="url(#planet_shadow_gradient)"/>
-
-			${clouds ? `
-				<g mask="url(#clouds_mask)">
-					<circle cx="0" cy="0" r="100" fill="${clouds.color}"/>
-					<circle cx="0" cy="0" r="100" fill="url(#clouds_shadow_gradient)"/>
-				</g>
-				`
-				: ''
-			}
-
-			${atmosphere ? `
-				<mask
-					id="diffraction_mask"
-					style="mask-type:alpha"
-					maskUnits="userSpaceOnUse"
-					x="-100" y="-100" width="200" height="200"
-				>
-					<circle cx="0" cy="0" r="100" fill="url(#diffraction_alpha)"/>
-				</mask>
-
-				<g mask="url(#diffraction_mask)">
-					<circle
-						cx="0" cy="0" r="100"
-						opacity="0.41"
-						fill="url(#diffraction_gradient)"
-					/>
-				</g>
-				`
-				: ''
-			}
-		`
-		this.el.appendChild(overlayEl)
+		// create overlays
+		const overlaysEl = document.createElementNS("http://www.w3.org/2000/svg", "g")
+		const overlays = []
+		if(shadow)
+			overlays.push(getShadowOverlay(innerRadius+0.5,shadow.opacity))
+		if(clouds)
+			overlays.push(getCloudsOverlay(clouds.color))
+		if(atmosphere)
+			overlays.push(getAtmosphereOverlay(atmosphere.opacity))
+		overlaysEl.innerHTML = overlays.join("\n")
+		this.el.appendChild(overlaysEl)
 
 		this.setRotation = function(rotation) {
 			const borderVertex = getBorderVertexBrute(positions, faces, adjacency, rotation)

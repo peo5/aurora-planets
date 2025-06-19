@@ -25,68 +25,74 @@ function init() {
 	nestEl.appendChild(planetNestEl)
 
 	const planetTemplate = {
-		"seed": "mac0300",
-		"resolution": 4,
-		"color": "rgb(80,120,180)",
-		"noises": {
-			"a": {
+		seed: "mac0300",
+		resolution: 4,
+		color: "rgb(80,120,180)",
+		"light-angle": "220",
+		noises: {
+			a: {
 				"seed-suffix": "noise A",
 				"octave-strengths": [
 					2,
 					8,
 					2,
-					8
+					8,
 				]
 			},
-			"b": {
+			b: {
 				"octave-strengths": [
 					1,
 					8,
 					2,
-					4
+					4,
 				],
-				"seed-suffix": "b"
+				"seed-suffix": "b",
 			},
-			"clouds": {
+			clouds: {
 				"octave-strengths": [
 					2,
 					1,
 					4,
-					4
+					4,
 				],
-				"seed-suffix": "clouds"
+				"seed-suffix": "clouds",
 			}
 		},
-		"layers": [
+		layers: [
 			{
 				"noise-strengths": {
-					"a": 2,
-					"b": 1
+					a: 2,
+					b: 1,
 				},
-				"span": 0.35,
-				"color": "rgb(110,50,90)"
+				span: 0.35,
+				color: "rgb(110,50,90)",
 			},
 			{
 				"noise-strengths": {
-					"a": 1,
-					"b": 2
+					a: 1,
+					b: 2,
 				},
-				"span": 0.25,
-				"color": "rgb(160,80,100)"
+				span: 0.25,
+				color: "rgb(160,80,100)",
 			}
 		],
-		"clouds": {
+		clouds: {
 			"noise-strengths": {
-				"clouds": 1
+				clouds: 1,
 			},
-			"span": 0.1,
-			"color": "rgb(200,250,180)",
-			"height": 5
+			span: 0.1,
+			color: "rgb(200,250,180)",
+			height: 5,
 		},
-		"atmosphere": {
-			"color": "rgb(200,250,180)",
-			"height": 18
-		}
+		atmosphere: {
+			color: "rgb(200,250,180)",
+			opacity: 0.4,
+			height: 16,
+		},
+		shadow: {
+			color: "rgb(3,7,36)",
+			opacity: 0.9,
+		},
 	}
 	const planet = new PlanetView(planetTemplate)
 	planet.el.style.width = "100%"
@@ -95,10 +101,10 @@ function init() {
 	const collectionTemplate = [
 		"mac0300",
 		{
-			"name": "mac0327",
-			"seed": "coxa"
+			name: "mac0327",
+			seed: "coxa",
 		},
-		"mac0325"
+		"mac0325",
 	]
 
 	const templateView = new TemplateView(planetTemplate, collectionTemplate, template => {
